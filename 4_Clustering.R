@@ -1,6 +1,6 @@
 # Utilize methods for evaluating the selection of PCs to use for clustering
 # Perform clustering of cells based on significant PCs
-# setwd("/Volumes/target_nbl_ngs/KP/singleCellProjects/multiomeProject_MatkarS")
+# setwd("~/KP/singleCellProjects/multiomeProject")
 
 library(Seurat)
 library(ggplot2)
@@ -21,18 +21,18 @@ library(purrr)
 set.seed(1234)
 
 # Now that we have our high quality cells integrated, we want to know the different cell types present within our population of cells.
-# Determining how many PCs to include in the clustering step is 
+# Determining how many PCs to include in the clustering step is
 # therefore important to ensure that we are capturing the majority of the variation, or cell types, present in our dataset.
 
 seurat_integrated <- readRDS('results/integrated_seurat.rds')
 
 # Elbow Plot --------------------------------------------------
-ElbowPlot(object = seurat_integrated, 
+ElbowPlot(object = seurat_integrated,
           ndims = 43)
 
 # quantitative approach to choose PCs
 # We can calculate where the principal components start to elbow by taking the larger value of:
-#   
+#
 # 1. The point where the principal components only contribute 5% of standard deviation and the principal components cumulatively contribute 90% of the standard deviation.
 # 2. The point where the percent change in variation between the consecutive PCs is less than 0.1%.
 
@@ -56,36 +56,36 @@ pcs <- min(co1, co2)
 pcs
 
 # Create a dataframe with values
-plot_df <- data.frame(pct = pct, 
-                      cumu = cumu, 
+plot_df <- data.frame(pct = pct,
+                      cumu = cumu,
                       rank = 1:length(pct))
 
-# Elbow plot to visualize 
-ggplot(plot_df, aes(cumu, pct, label = rank, color = rank > pcs)) + 
-  geom_text() + 
-  geom_vline(xintercept = 90, color = "grey") + 
+# Elbow plot to visualize
+ggplot(plot_df, aes(cumu, pct, label = rank, color = rank > pcs)) +
+  geom_text() +
+  geom_vline(xintercept = 90, color = "grey") +
   geom_hline(yintercept = min(pct[pct > 5]), color = "grey") +
   theme_bw()
 
 
 # Cluster the cells ---------------------------------------------
-# The resolution is an important argument that sets the "granularity" of the downstream clustering and will need to be optimized for every individual experiment. 
-# For datasets of 3,000 - 5,000 cells, the resolution set between 0.4-1.4 generally yields good clustering. 
+# The resolution is an important argument that sets the "granularity" of the downstream clustering and will need to be optimized for every individual experiment.
+# For datasets of 3,000 - 5,000 cells, the resolution set between 0.4-1.4 generally yields good clustering.
 # Increased resolution values lead to a greater number of clusters, which is often required for larger datasets.
 
 
 # Determine the K-nearest neighbor graph
 # Using first 40 PCs to cluster
-seurat_integrated <- FindNeighbors(object = seurat_integrated, 
+seurat_integrated <- FindNeighbors(object = seurat_integrated,
                                    dims = 1:40)
 
-# Determine the clusters for various resolutions                                
+# Determine the clusters for various resolutions
 seurat_integrated <- FindClusters(object = seurat_integrated,
                                   resolution = c(0.4, 0.6, 0.8, 1.0, 1.4))
 
 
 # ....Explore resolutions ---------------
-seurat_integrated@meta.data %>% 
+seurat_integrated@meta.data %>%
   View()
 
 
@@ -115,23 +115,23 @@ ggsave(umap_0.8, filename = 'figures/UMAPplot_clustering_integrated_object.pdf',
 
 # ....Segregation of clusters by sample -----------------
 # Extract identity and sample information from seurat object to determine the number of cells per cluster per sample
-# n_cells <- FetchData(seurat_integrated, 
+# n_cells <- FetchData(seurat_integrated,
 #                      vars = c("ident", "orig.ident")) %>%
 #   dplyr::count(ident, orig.ident) %>%
 #   tidyr::spread(ident, n)
-# 
+#
 # # View table
 # View(n_cells)
 
 # UMAP of cells in each cluster by sample
-qc1 <- DimPlot(seurat_integrated, 
-        label = TRUE, 
+qc1 <- DimPlot(seurat_integrated,
+        label = TRUE,
         split.by = "sample")  + NoLegend()
 
 ggsave(qc1, filename = 'figures/UMAP_QC1_postClustering_cluster_by_sample.pdf', width = 10, height = 10)
 
-# Generally, we expect to see the majority of the cell type clusters to be present in all conditions; 
-# however, depending on the experiment we might expect to see some condition-specific cell types present. 
+# Generally, we expect to see the majority of the cell type clusters to be present in all conditions;
+# however, depending on the experiment we might expect to see some condition-specific cell types present.
 # These clusters look pretty similar between conditions, which is good since we expected similar cell types to be present in both PDX and Parental tumors
 
 
@@ -139,7 +139,7 @@ ggsave(qc1, filename = 'figures/UMAP_QC1_postClustering_cluster_by_sample.pdf', 
 
 # Explore whether clusters segregate by cell cycle phase
 qc2 <- DimPlot(seurat_integrated,
-        label = TRUE, 
+        label = TRUE,
         split.by = "Phase")  + NoLegend()
 
 # !!!
@@ -151,10 +151,10 @@ ggsave(qc2, filename = 'figures/UMAP_QC2_postClustering_cluster_by_cellCyclePhas
 # Determine metrics to plot present in seurat_integrated@meta.data
 metrics <-  c("nUMI", "nGene", "S.Score", "G2M.Score", "mitoRatio")
 
-qc3 <- FeaturePlot(seurat_integrated, 
-            reduction = "umap", 
+qc3 <- FeaturePlot(seurat_integrated,
+            reduction = "umap",
             features = metrics,
-            pt.size = 0.4, 
+            pt.size = 0.4,
             order = TRUE,
             min.cutoff = 'q10',
             label = TRUE)
@@ -169,39 +169,39 @@ columns <- c(paste0("PC_", 1:16),
              "UMAP_1", "UMAP_2")
 
 # Extracting this data from the seurat object
-pc_data <- FetchData(seurat_integrated, 
+pc_data <- FetchData(seurat_integrated,
                      vars = columns)
 
 # Adding cluster label to center of cluster on UMAP
-umap_label <- FetchData(seurat_integrated, 
+umap_label <- FetchData(seurat_integrated,
                         vars = c("ident", "UMAP_1", "UMAP_2"))  %>%
   group_by(ident) %>%
   summarise(x=mean(UMAP_1), y=mean(UMAP_2))
 
 # Plotting a UMAP plot for each of the PCs
 map(paste0("PC_", 1:16), function(pc){
-  ggplot(pc_data, 
+  ggplot(pc_data,
          aes(UMAP_1, UMAP_2)) +
-    geom_point(aes_string(color=pc), 
+    geom_point(aes_string(color=pc),
                alpha = 0.7) +
-    scale_color_gradient(guide = FALSE, 
-                         low = "grey90", 
+    scale_color_gradient(guide = FALSE,
+                         low = "grey90",
                          high = "blue")  +
-    geom_text(data=umap_label, 
+    geom_text(data=umap_label,
               aes(label=ident, x, y)) +
     ggtitle(pc)
-}) %>% 
+}) %>%
   plot_grid(plotlist = .)
 
-# Examine PCA results 
+# Examine PCA results
 print(seurat_integrated[["pca"]], dims = 1:5, nfeatures = 5)
 
 
 
 
 # ....Exploration of known cell type markers -----------------
-aa1 <- DimPlot(object = seurat_integrated, 
-        reduction = "umap", 
+aa1 <- DimPlot(object = seurat_integrated,
+        reduction = "umap",
         label = TRUE)
 
 # The SCTransform normalization was performed only on the 3000 most variable genes, so many of our genes of interest may not be present in this data.
@@ -213,19 +213,10 @@ DefaultAssay(seurat_integrated) <- "RNA"
 seurat_integrated <- NormalizeData(seurat_integrated, verbose = FALSE)
 
 
-FeaturePlot(seurat_integrated, 
-            reduction = "umap", 
-            features =c('HBB', 'HBA2'), 
+FeaturePlot(seurat_integrated,
+            reduction = "umap",
+            features =c('HBB', 'HBA2'),
             order = TRUE,
-            min.cutoff = 'q10', 
+            min.cutoff = 'q10',
             label = TRUE)
 # unable to detect most commonly known markers
-
-
-
-
-
-
-
-
-

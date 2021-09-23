@@ -2,7 +2,7 @@
 # Understand how to determine markers of individual clusters
 # Understand the iterative processes of clustering and marker identification
 
-# setwd("/Volumes/target_nbl_ngs/KP/singleCellProjects/multiomeProject_MatkarS")
+# setwd("~/KP/singleCellProjects/multiomeProject")
 library(Seurat)
 library(ggplot2)
 library(harmony) # 1.0
@@ -33,7 +33,7 @@ set.seed(1234)
 
 
 # Identification of conserved markers in all conditions -------------------------
-# Since we have samples representing different conditions in our dataset, our best option is to find conserved markers. 
+# Since we have samples representing different conditions in our dataset, our best option is to find conserved markers.
 
 # For performing differential expression after integration, we switch back to the original data
 DefaultAssay(seurat_integrated) <- "RNA"
@@ -43,7 +43,7 @@ markers <- FindConservedMarkers(seurat_integrated, ident.1 = 0, grouping.var = "
 head(markers)
 
 # running on all clusters (check total number of clusters by = Idents(seurat_integrated))
-load('/Volumes/target_nbl_ngs/KP/supporting_files/singleCell/human_gene_annotations.RData')
+load('~/KP/supporting_files/singleCell/human_gene_annotations.RData')
 
 # Create function to get conserved markers for any given cluster
 get_conserved <- function(cluster){
@@ -62,10 +62,10 @@ conserved_markers <- map_dfr(c(0:19), get_conserved)
 write.table(conserved_markers, file = 'results/conserved_marks_each_cluster.txt', col.names = T, row.names = F, sep = '\t', quote = F)
 
 # Extract top 5 markers per cluster
-top5 <- conserved_markers %>% 
-  mutate(avg_fc = (Parental_avg_log2FC + PDX_avg_log2FC) /2) %>% 
-  group_by(cluster_id) %>% 
-  top_n(n = 5, 
+top5 <- conserved_markers %>%
+  mutate(avg_fc = (Parental_avg_log2FC + PDX_avg_log2FC) /2) %>%
+  group_by(cluster_id) %>%
+  top_n(n = 5,
         wt = avg_fc)
 
 # Visualize top 5 markers per cluster
@@ -83,28 +83,28 @@ View(top5)
 # Plot top 5 markers for all clusters
 for(i in 0:19){
   print(i)
-  f1 <- FeaturePlot(object = seurat_integrated, 
+  f1 <- FeaturePlot(object = seurat_integrated,
               features = top5[top5$cluster_id == i, "gene"] %>%
                 pull(gene),
               split.by = 'sample',
               label = TRUE)
-  
+
 
   v1 <- VlnPlot(object = seurat_integrated,
           features = top5[top5$cluster_id == i, "gene"] %>%
             pull(gene))
 
-  
-  
+
+
   #ggsave(f1, filename = paste0('figures/featurePlot_top5_conservedmarkers_cluster_',i,'.pdf'), width = 15, height = 10)
   ggsave(v1, filename = paste0('figures/VlnPlot_top5_conservedmarkers_cluster_',i,'.pdf'), width = 15, height = 10)
 }
 
 # generate a dotplot with top 5 markers from each cluster
-markers.to.plot <- c(unique(conserved_markers %>% 
-                    mutate(avg_fc = (Parental_avg_log2FC + PDX_avg_log2FC) /2) %>% 
-                    group_by(cluster_id) %>% 
-                    top_n(n = 1, 
+markers.to.plot <- c(unique(conserved_markers %>%
+                    mutate(avg_fc = (Parental_avg_log2FC + PDX_avg_log2FC) /2) %>%
+                    group_by(cluster_id) %>%
+                    top_n(n = 1,
                           wt = avg_fc) %>%
                     dplyr::select(gene)))
 markers.to.plot <- unique(markers.to.plot$gene)
@@ -116,14 +116,14 @@ dp1 <- DotPlot(seurat_integrated, features = markers.to.plot, cols = c("blue", "
 # Identification of all markers for each cluster -------------------------
 
 # Find markers for every cluster compared to all remaining cells, report only the positive ones
-combined_markers <- FindAllMarkers(object = seurat_integrated, 
+combined_markers <- FindAllMarkers(object = seurat_integrated,
                                    only.pos = TRUE,
-                                   logfc.threshold = log(2))  
+                                   logfc.threshold = log(2))
 
-View(combined_markers)  
+View(combined_markers)
 
-# Combine markers with gene descriptions 
-ann_comb_markers <- inner_join(x = combined_markers, 
+# Combine markers with gene descriptions
+ann_comb_markers <- inner_join(x = combined_markers,
                                y = annotations[, c("gene_name", "description")],
                                by = c("gene" = "gene_name")) %>%
                     unique()
@@ -181,8 +181,8 @@ for (i in 0:19){
   print(i)
   try({
     ident1 <- paste0(i,"_PDX")
-    ident2 <- paste0(i,"_Parental") 
-    condition.diffgenes <- FindMarkers(seurat_integrated, ident.1 = ident1, ident.2=ident2, min.pct=0.25, logfc.threshold = log(2)) 
+    ident2 <- paste0(i,"_Parental")
+    condition.diffgenes <- FindMarkers(seurat_integrated, ident.1 = ident1, ident.2=ident2, min.pct=0.25, logfc.threshold = log(2))
     condition.diffgenes$cluster <- i
     DE.allClusters <- rbind(DE.allClusters, condition.diffgenes)
   })
@@ -201,7 +201,7 @@ conserved_markers <- conserved_markers[conserved_markers$Parental_p_val_adj < 0.
 # ...convert gene symbol to EntrezID -----------
 hs <- org.Hs.eg.db
 my.symbols <- c(as.character(conserved_markers$gene))
-df <- AnnotationDbi::select(hs, 
+df <- AnnotationDbi::select(hs,
                             keys = my.symbols,
                             columns = c("ENTREZID", "SYMBOL"),
                             keytype = "SYMBOL")
@@ -223,7 +223,7 @@ out.gsea <- conserved_markers_gsea %>%
   arrange(cluster_id) %>%
   group_by(cluster_id) %>%
   group_map(~performGSEA(.x$avg_log2FC, .x$ENTREZID, .y$cluster_id))
-  
+
 
 performGSEA <- function(lfc, entrzid, cluster){
   print(cluster)
@@ -231,30 +231,30 @@ performGSEA <- function(lfc, entrzid, cluster){
   ranks <- lfc
   names(ranks) <- entrzid
   head(ranks)
-  
+
   # plot ranked fold changes
   #barplot(sort(ranks, decreasing = T))
-  
+
   # load pathways
   my_pathways <- reactomePathways(names(ranks))
-  
-  out <- fgsea(pathways = my_pathways, 
+
+  out <- fgsea(pathways = my_pathways,
         stats = ranks,
         minSize=15,
         maxSize=500,
         nperm=100000)
-  
+
   # plotting gsea table
   topPathwaysUp <- out[ES > 0][head(order(pval), n=20), pathway]
   topPathwaysDown <- out[ES < 0][head(order(pval), n=20), pathway]
   topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
-  
+
   pdf(paste0("figures/GSEA_cluster_",cluster,"_table_genes_top20_upDown_regulated_pathways.pdf"), width = 20, height = 10)
   plot.new()
-  plotGseaTable(my_pathways[topPathways], ranks, out, 
+  plotGseaTable(my_pathways[topPathways], ranks, out,
                 gseaParam = 0.5)
   dev.off()
-  
+
   return(out)
   print("done!")
 }
@@ -263,18 +263,17 @@ performGSEA <- function(lfc, entrzid, cluster){
 # test <- conserved_markers_gsea %>%
 #   group_by(cluster_id) %>%
 #   filter(cluster_id == 0)
-# 
+#
 # test <- test[,c(1,2,9:11)]
 # test <- test[!duplicated(test),]
 # ranks <- test$avg_log2FC
 # names(ranks) <- test$ENTREZID
-# 
+#
 # # load pathways
 # my_pathways <- reactomePathways(names(ranks))
-# 
-# test.gsea <- fgsea(pathways = my_pathways, 
+#
+# test.gsea <- fgsea(pathways = my_pathways,
 #       stats = ranks,
 #       minSize=15,
 #       maxSize=500,
 #       nperm=100000)
-
