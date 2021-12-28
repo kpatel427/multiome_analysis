@@ -1,5 +1,5 @@
 # script to run doubletFinder to detect doublets in each tumor sample
-# setwd("/mnt/isilon/maris_lab/target_nbl_ngs/KP/singleCellProjects/multiomeProject_MatkarS")
+# setwd("~/KP/singleCellProjects/multiomeProject_MatkarS")
 # steps:
 # - run doublet finder on individual samples (not merged object)
 # - filter out low quality cells for each sample
