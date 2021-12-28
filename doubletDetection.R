@@ -21,7 +21,7 @@ library(stringr)
 set.seed(1234)
 
 # specifying outs directory
-outs <- "/mnt/isilon/maris_lab/target_nbl_ngs/Mosse_SMatkar_Multiome/YMosse_SMatkar_Multiome_08172021_release/"
+outs <- "Mosse_SMatkar_Multiome/YMosse_SMatkar_Multiome_08172021_release/"
 
 # read in count data and create Seurat objects --------------------------------------------------------------------------------------
 
